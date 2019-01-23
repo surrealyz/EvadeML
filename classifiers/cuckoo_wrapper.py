@@ -5,6 +5,7 @@ import sys
 import hashlib
 import time
 import re
+import ipdb
 
 _current_dir = os.path.abspath(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.normpath(os.path.join(_current_dir, ".."))
@@ -32,9 +33,9 @@ def submit(file_path, public_name = None, timeout = None, cache=False):
     if cache:
         task_id = check_reported(file_path)
         if task_id:
-            #print "skip one file to submit", file_path
+            print "skip one file to submit", file_path
             return task_id
-    #print "submit one file", file_path
+    print "submit one file", file_path
     REST_URL = "http://%s:%d/tasks/create/file" % (HOST, PORT)
     with open(file_path, "rb") as sample:
         if not public_name:
@@ -47,6 +48,7 @@ def submit(file_path, public_name = None, timeout = None, cache=False):
         if cache != True:
             args['cache'] = cache
         if args != {}:
+            #ipdb.set_trace()
             request = requests.post(REST_URL, files=multipart_file, data=args)
         else:
             request = requests.post(REST_URL, files=multipart_file)
@@ -107,10 +109,11 @@ def get_url_hosts_from_sock_apis(sigs):
 
     for sig in sigs:
         if sig['description'] == "Socket APIs were called.":
-            for call in sig['data']:
-                api_name = call['signs'][0]['value']['api']
+            logger.info("===== FOUND SOCKET API...")
+            for mark in sig['marks']:
+                api_name = mark['description']['api']
                 if api_name == 'send':
-                    args = call['signs'][0]['value']['arguments']
+                    args = mark['description']['arguments']
                     sent_buffer = args[0]['value'] # may be HTTP header.
                     if len(sent_buffer) > 4:
                         sent_buffer += '\r\n'
@@ -123,24 +126,26 @@ def get_url_hosts_from_sock_apis(sigs):
                         url = "http://%s%s" % (h_dict['Host'], path)
                         urls.add(url)
         elif sig['description'] == "Network APIs were called.":
-            for call in sig['data']:
-                api_name = call['signs'][0]['value']['api']
-                args = call['signs'][0]['value']['arguments']
+            logger.info("===== FOUND NETWORK API...")
+            for mark in sig['marks']:
+                api_name = mark['description']['api']
+                args = mark['description']['arguments']
                 #args_string = ', '.join(["%s=%s" % (arg['name'], arg['value']) for arg in args])
                 #api_string = "%s(%s)" % (api_name, args_string)
                 #api_strs.append(api_string)
 
                 if api_name == "getaddrinfo":
-                    addr = args[1]['value']
-                    query_hosts.add(addr)
+                    addr = args['hostname']
+                    if addr != '':
+                        query_hosts.add(addr)
                 if api_name == "URLDownloadToFileW":
-                    url = args[0]['value']
-                    #loc = args[1]['value']
-                    #url_dl.add(url+','+loc)
-                    urls.add(url)
+                    url = args['url']
+                    if url != '':
+                        urls.add(url)
                 if api_name == "InternetOpenUrlA":
-                    url = args[0]['value']
-                    urls.add(url)
+                    url = args['url']
+                    if url != '':
+                        urls.add(url)
     #return list(urls), list(query_hosts)
     return str(list(urls) + list(query_hosts))
 
@@ -172,6 +177,7 @@ def query_tasks(task_ids):
             if status == "reported":
                 sigs = view_signatures(task_id)
                 sig_pattern = get_url_hosts_from_sock_apis(sigs)
+                logger.info("===== SIG_PATTERN %s" % sig_pattern)
                 start_time = None
                 #delete_task(task_id)
             elif status == "running":
@@ -197,7 +203,8 @@ def query_tasks(task_ids):
 
 def cuckoo(file_paths):
     logger.info("Submit %d files to cuckoo." % len(file_paths))
-    task_ids = submit_files(file_paths)
+    #task_ids = submit_files(file_paths, cache=True)
+    task_ids = submit_files(file_paths, cache=False)
     logger.info("Waiting for %d results from cuckoo." % len(file_paths))
     logger.info("Task id: %s" % (task_ids))
     query_results = query_tasks(task_ids)
@@ -207,9 +214,33 @@ def cuckoo(file_paths):
 if __name__ == "__main__":
     #SAMPLE_FILE = "/home/xuweilin/coder/sandbox/cuckoo/requirements.txt"
     #fpath = "../results/classifier=hidost,popsz=100,maxgen=3,mutprob=0.2,extnum=3,stopfit=0.00,start=F3B9663A01A73C5ECA9D6B2A0519049E.pdf/variants/generation_3/variant_98.pdf"
+    """
     fpath = sys.argv[1]
+bin_ret = ['malicious' if len(set(sig).intersection(set(expected_sig))) > 0 else 'benign' for sig in results]
+print bin_ret
     fname = fpath.split('=')[-1].replace('/', '_')
     task_id = submit(fpath, fname)
     print view(task_id)
+    """
+
+    task_ids = [12, 13, 14, 15, 16, 17, 18, 19, 20]
+    print "Task id: %s" % (task_ids)
+    query_results = query_tasks(task_ids)
+    print query_results
+    import pickle
+
+    seed_sha1 = '00d3f97d86825dd7eae67b8cae2eda407cc9e0f3'
+    cuckoo_sig_pickle = 'utils/36vms_sigs.pickle'
+    cuckoo_seed_sigs = pickle.load(open(cuckoo_sig_pickle))
+    expected_sig = cuckoo_seed_sigs[seed_sha1]
+    print expected_sig, type(expected_sig)
+    for sig in query_results:
+        print set(eval(sig))
+        print set(eval(expected_sig))
+        print set(eval(sig)).intersection(eval(expected_sig))
+    bin_ret = ['malicious' if len(set(eval(sig)).intersection(set(eval(expected_sig)))) > 0 else 'benign' for sig in query_results]
+    print bin_ret
+
+
 
 
