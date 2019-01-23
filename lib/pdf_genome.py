@@ -14,8 +14,8 @@ class PdfGenome:
         pass
 
     @staticmethod
-    def load_genome(pdf_file_path, pickleable = False):
-        pdf_obj = PdfReader(pdf_file_path, slow_parsing=False)
+    def load_genome(pdf_file_path, pickleable = False, noxref = False):
+        pdf_obj = PdfReader(pdf_file_path, slow_parsing=noxref)
 
         if pickleable:
             # Remove the dynamic contents to make it pickleable.
