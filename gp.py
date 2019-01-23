@@ -144,7 +144,7 @@ class GPPdf:
                     best_gen, best_vid, self.best_score = self.get_best_variant(1, self.generation)
                     promising_trace = self.load_variant_trace(best_gen, best_vid)
 
-                    self.logger.info("Save the promising trace %.2f of %d:%d" % (best_score, best_gen, best_vid))
+                    self.logger.info("Save the promising trace %.2f of %d:%d" % (self.best_score, best_gen, best_vid))
 
                     self.promising_traces.append(promising_trace)
                     Trace.dump_traces(self.promising_traces, self.promising_traces_path, exclude_traces=self.success_traces)
