@@ -62,20 +62,23 @@ def correct_feats_order(feats_fname, flist_fname, feats_fname_ordered):
         for feat, fname in zip(feat_list_sorted, flist):
             f.write("%s#%s\n" % (feat, fname))
 
-def hidost_feature(pdf_paths):
-    if not os.path.isdir(cache_dir):
-        os.system("mkdir -p %s" % (cache_dir))
+def hidost_feature(pdf_paths, tmp_dir=None, nfeat=10924, fpath=feats_path, basename=False):
+    if tmp_dir == None:
+        if not os.path.isdir(cache_dir):
+            os.system("mkdir -p %s" % (cache_dir))
+    
+        sha1_str = hash_str(''.join(pdf_paths))
+        tmp_dir = os.path.join(cache_dir, sha1_str)
+    else:
+        if os.path.isdir(tmp_dir):
+            os.system("rm -rf %s" % tmp_dir)
+        os.system("mkdir -p %s" % tmp_dir)
 
+        empty_file_list = os.path.join(tmp_dir, "empty.list")
+    
     if not os.path.isfile(empty_file_list):
         os.system("touch %s" % (empty_file_list))
-    
-    sha1_str = hash_str(''.join(pdf_paths))
-    tmp_dir = os.path.join(cache_dir, sha1_str)
-    
-    if os.path.isdir(tmp_dir):
-        os.system("rm -rf %s" % tmp_dir)
-    os.system("mkdir -p %s" % tmp_dir)
-    
+
     pdf_file_list = os.path.join(tmp_dir, "input.pdfs.list")
     
     data_file = os.path.join(tmp_dir, "input.data.libsvm")
@@ -86,17 +89,22 @@ def hidost_feature(pdf_paths):
 
     # ---pdf-file-----> pdf2paths ---->  pdf-path-file
     for pdf_path in pdf_paths:
-        #pdf_file_name = os.path.basename(pdf_path)
-        pdf_file_name = hash_str(pdf_path) + ".pdf"
+        if basename is True:
+            pdf_file_name = os.path.basename(pdf_path)
+        else:
+            pdf_file_name = hash_str(pdf_path) + ".pdf"
 
         cmd = "%s \"%s\" n > %s" % (pdf2paths_cmd, pdf_path, os.path.join(tmp_dir, pdf_file_name))
-        #print cmd
+        #print cmd ### DEBUG
         os.system(cmd)
+        # only add files that are not empty
+        #if os.stat(os.path.join(tmp_dir, pdf_file_name)).st_size != 0:
         cmd = "echo '%s' >> %s " % (os.path.join(tmp_dir, pdf_file_name), pdf_file_list)
+        #print cmd ### DEBUG
         os.system(cmd)
 
     # ----pdf-path-files----> feat-extract ------>  data.libsvm
-    cmd = "%s -m %s -b %s -f %s -o %s" % (feat_extract_cmd, pdf_file_list, empty_file_list, feats_path, data_file)
+    cmd = "%s -m %s -b %s -f %s -o %s" % (feat_extract_cmd, pdf_file_list, empty_file_list, fpath, data_file)
     print(cmd)
     os.system(cmd)
     os.system("cat %s" % data_file)
@@ -106,7 +114,7 @@ def hidost_feature(pdf_paths):
 
     #print 'Loading data file'
     X, _ = datasets.load_svmlight_file(data_file_corrected_order, 
-                                       n_features=6087, 
+                                       n_features=nfeat, 
                                        multilabel=False, 
                                        zero_based=False, 
                                        query_id=False)
@@ -135,8 +143,9 @@ model = pickle.load(open(model_path, 'rb'))
 def model_decision(X):
     y = model.decision_function(X)
     r = list(y)
-    scores = [float(ele[0]) for ele in r]
+    #scores = [float(ele[0]) for ele in r]
     #os.system("rm -rf %s" % tmp_dir)
+    scores = [float(ele) for ele in r]
     return scores
 
 def hidost(pdf_paths):
