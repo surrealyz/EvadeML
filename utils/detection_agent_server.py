@@ -76,7 +76,7 @@ def query(file_paths, real_query_method=None, query_method=None, insert_method=N
             query_files[hash_str].append(idx)
             
     # submit files of unknown indices to wepawet
-    logger.info("Waiting for %d results." % len(file_paths))
+    logger.info("Waiting for %d results." % len(to_wpw_files))
     query_results = real_query_method(to_wpw_files)
     logger.info("Finished.")
 
@@ -120,7 +120,7 @@ def query_classifier(classifier_name, file_paths, seed_sha1 = None):
     assert(len(file_paths) == len(results))
 
     if classifier_name == "cuckoo":
-        bin_ret = ['malicious' if sig == expected_sig else 'benign' for sig in results]
+        bin_ret = ['malicious' if len(set(eval(sig)).intersection(set(eval(expected_sig)))) > 0 else 'benign' for sig in results]
         return bin_ret
     else:
         return results
