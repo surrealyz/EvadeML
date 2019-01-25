@@ -69,12 +69,11 @@ def hidost_feature(pdf_paths, tmp_dir=None, nfeat=10924, fpath=feats_path, basen
     
         sha1_str = hash_str(''.join(pdf_paths))
         tmp_dir = os.path.join(cache_dir, sha1_str)
-    else:
-        if os.path.isdir(tmp_dir):
-            os.system("rm -rf %s" % tmp_dir)
-        os.system("mkdir -p %s" % tmp_dir)
+    if os.path.isdir(tmp_dir):
+        os.system("rm -rf %s" % tmp_dir)
+    os.system("mkdir -p %s" % tmp_dir)
 
-        empty_file_list = os.path.join(tmp_dir, "empty.list")
+    empty_file_list = os.path.join(tmp_dir, "empty.list")
     
     if not os.path.isfile(empty_file_list):
         os.system("touch %s" % (empty_file_list))
