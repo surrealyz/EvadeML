@@ -32,6 +32,8 @@ from lib.common import hash_file
 # Import local classifiers.
 from classifiers.pdfrate_wrapper import pdfrate
 from classifiers.hidost_wrapper import hidost
+from classifiers.mlp_wrapper import mlp
+from classifiers.robustmlp_wrapper import robustmlp
 from classifiers.bundle_wrapper import hidost_pdfrate, hidost_pdfrate_sigmoid
 
 import sklearn
@@ -101,6 +103,10 @@ def query_classifier(classifier_name, file_paths, seed_sha1 = None):
         real_query_method = pdfrate
     elif classifier_name == "hidost":
         real_query_method = hidost
+    elif classifier_name == "mlp":
+        real_query_method = mlp
+    elif classifier_name == "robustmlp":
+        real_query_method = robustmlp
     elif classifier_name == "wepawet":
         real_query_method = wepawet
     elif classifier_name == "cuckoo":

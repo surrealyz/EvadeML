@@ -33,6 +33,12 @@ def fitness_pos_neg(file_paths, seed_sha1, classifier_name, oracle_name, offset 
 def fitness_01(file_paths, seed_sha1, classifier_name, oracle_name):
     return fitness_pos_neg(file_paths, seed_sha1, classifier_name, oracle_name, offset = 0.5)
 
+def fitness_mlp(file_paths, seed_sha1):
+    return fitness_01(file_paths, seed_sha1, 'mlp', 'cuckoo')
+
+def fitness_robustmlp(file_paths, seed_sha1):
+    return fitness_01(file_paths, seed_sha1, 'robustmlp', 'cuckoo')
+
 def fitness_pdfrate(file_paths, seed_sha1):
     return fitness_01(file_paths, seed_sha1, 'pdfrate', 'cuckoo')
 

@@ -395,6 +395,10 @@ if __name__ == "__main__":
         from lib.fitness import fitness_pdfrate as fitness_func
     elif classifier_name == 'hidost':
         from lib.fitness import fitness_hidost as fitness_func
+    elif classifier_name == 'mlp':
+        from lib.fitness import fitness_mlp as fitness_func
+    elif classifier_name == 'robust':
+        from lib.fitness import fitness_robustmlp as fitness_func
     elif classifier_name == "hidost_pdfrate":
         from lib.fitness import fitness_hidost_pdfrate as fitness_func
     elif classifier_name == "hidost_pdfrate_mean":
