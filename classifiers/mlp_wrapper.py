@@ -26,7 +26,7 @@ def query_tf(X):
     if r.status_code == 200:
         json_decoder = json.JSONDecoder()
         res = json_decoder.decode(r.text)
-        return [item['y_softmax'][1] for item in res['predictions']]
+        return [item['pre_softmax'] for item in res['predictions']]
 
 
 if __name__ == "__main__":
@@ -38,4 +38,7 @@ if __name__ == "__main__":
     json_decoder = json.JSONDecoder()
     res = json_decoder.decode(r.text)
     #print res['predictions']
-    print [item['y_softmax'][1] for item in res['predictions']]
+    classified_scores = [item['pre_softmax'] for item in res['predictions']]
+    print classified_scores
+    for i in range(len(classified_scores)):
+        print classified_scores[i][0] - classified_scores[i][1]

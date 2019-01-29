@@ -26,7 +26,7 @@ def query_tf(X):
     if r.status_code == 200:
         json_decoder = json.JSONDecoder()
         res = json_decoder.decode(r.text)
-        return [item['y_softmax'][1] for item in res['predictions']]
+        return [item['pre_softmax'] for item in res['predictions']]
 
 if __name__ == "__main__":
     REST_URL='http://localhost:8501/v1/models/test_insert_rootany_delete_one:predict'
@@ -36,4 +36,4 @@ if __name__ == "__main__":
     r = requests.post(REST_URL, json=payload)
     json_decoder = json.JSONDecoder()
     res = json_decoder.decode(r.text)
-    print [item['y_softmax'][1] for item in res['predictions']]
+    print [item['pre_softmax'] for item in res['predictions']]
