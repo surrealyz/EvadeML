@@ -42,10 +42,10 @@ class PdfGenome:
             return None
 
     @staticmethod
-    def load_external_genome(folder, pickleable = False):
+    def load_external_genome(folder, pickleable = False, noxref=False):
         ext_pdf_paths = [] # element: (entry, path)
         for file_path in list_file_paths(folder):
-            pdf_obj = PdfGenome.load_genome(file_path, pickleable)
+            pdf_obj = PdfGenome.load_genome(file_path, pickleable, noxref=noxref)
             paths = PdfGenome.get_object_paths(pdf_obj)
             for path in paths:
                 ext_pdf_paths.append((pdf_obj, path))
