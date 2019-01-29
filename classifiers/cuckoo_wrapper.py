@@ -214,10 +214,10 @@ def cuckoo(file_paths):
 if __name__ == "__main__":
     #SAMPLE_FILE = "/home/xuweilin/coder/sandbox/cuckoo/requirements.txt"
     #fpath = "../results/classifier=hidost,popsz=100,maxgen=3,mutprob=0.2,extnum=3,stopfit=0.00,start=F3B9663A01A73C5ECA9D6B2A0519049E.pdf/variants/generation_3/variant_98.pdf"
-    """
+    #"""
     fpath = sys.argv[1]
-bin_ret = ['malicious' if len(set(sig).intersection(set(expected_sig))) > 0 else 'benign' for sig in results]
-print bin_ret
+    #bin_ret = ['malicious' if len(set(sig).intersection(set(expected_sig))) > 0 else 'benign' for sig in results]
+    #print bin_ret
     fname = fpath.split('=')[-1].replace('/', '_')
     task_id = submit(fpath, fname)
     print view(task_id)
@@ -240,6 +240,7 @@ print bin_ret
         print set(eval(sig)).intersection(eval(expected_sig))
     bin_ret = ['malicious' if len(set(eval(sig)).intersection(set(eval(expected_sig)))) > 0 else 'benign' for sig in query_results]
     print bin_ret
+    """
 
 
 
