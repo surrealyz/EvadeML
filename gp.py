@@ -141,12 +141,17 @@ class GPPdf:
             elif self.generation == max_gen:
                 self.logger.info("Failed at max generation.")
                 if max(scores) >= self.seed_fitness:
-                    best_gen, best_vid, self.best_score = self.get_best_variant(1, self.generation)
-                    promising_trace = self.load_variant_trace(best_gen, best_vid)
-
-                    self.logger.info("Save the promising trace %.2f of %d:%d" % (self.best_score, best_gen, best_vid))
-
-                    self.promising_traces.append(promising_trace)
+                    # k can be a parameter
+                    best_k_gen, best_k_vid, best_k_scores = self.get_best_k_variant(4, 1, self.generation)
+                    self.best_score = best_k_scores[0]
+                    for i in range(len(best_k_scores)):
+                        best_gen = best_k_gen[i]
+                        best_vid = best_k_vid[i]
+                        this_score = best_k_scores[i]
+                        promising_trace = self.load_variant_trace(best_gen, best_vid)
+                        self.logger.info("Save the promising trace %.2f of %d:%d" % (this_score, best_gen, best_vid))
+                        if promising_trace not in self.promising_traces:
+                            self.promising_traces.append(promising_trace)
                     Trace.dump_traces(self.promising_traces, self.promising_traces_path, exclude_traces=self.success_traces)
                 break
 
@@ -230,6 +235,22 @@ class GPPdf:
                 best_gen = gen
                 best_vid = scores.index(best_score)
         return best_gen, best_vid, best_score
+
+    def get_best_k_variant(self, k, start_gen, end_gen):
+        all_gen = []
+        all_vid = []
+        all_scores = []
+        for gen in range(start_gen, end_gen+1):
+            scores = self.fitness_scores[gen]
+            all_scores += scores
+            all_gen += [gen for i in range(len(scores))]
+            all_vid += [i for i in range(len(scores))]
+        sorted_scores = sorted(range(len(all_scores)), key=lambda j: s[j], reverse=True)
+        best_k_scores_idx = sorted_scores[:k]
+        best_k_scores = [all_scores[i] for i in best_k_scores_idx]
+        best_k_gen = [all_gen[i] for i in best_k_scores_idx]
+        best_k_vid = [all_vid[i] for i in best_k_scores_idx]
+        return best_k_gen, best_k_vid, best_k_scores
 
     def select(self, orig_list, scores, sel_size):
         # when reverse==False, select variants with lower score, otherwise select higher scores.
@@ -397,7 +418,7 @@ if __name__ == "__main__":
         from lib.fitness import fitness_hidost as fitness_func
     elif classifier_name == 'mlp':
         from lib.fitness import fitness_mlp as fitness_func
-    elif classifier_name == 'robust':
+    elif classifier_name == 'robustmlp':
         from lib.fitness import fitness_robustmlp as fitness_func
     elif classifier_name == "hidost_pdfrate":
         from lib.fitness import fitness_hidost_pdfrate as fitness_func
@@ -409,7 +430,7 @@ if __name__ == "__main__":
     gp_params = {'pop_size': pop_size, 'max_gen': max_gen, \
              'mut_rate': mut_rate, 'xover_rate': xover_rate, \
              'fitness_threshold': stop_fitness}
-    ext_genome = PdfGenome.load_external_genome(ext_genome_folder)
+    ext_genome = PdfGenome.load_external_genome(ext_genome_folder, noxref=True)
 
     try:
         gp = GPPdf( job_dir = job_dir,
