@@ -173,7 +173,11 @@ class GPPdf:
             for i in range(len(self.popul)):
                 if i not in self.vid_from_trace:
                     self.logger.debug("Generating %d:%d variant" % (self.generation+1, i))
-                    self.popul[i] = PdfGenome.mutation(self.popul[i], self.mut_rate, self.ext_genome)
+                    try:
+                        self.popul[i] = PdfGenome.mutation(self.popul[i], self.mut_rate, self.ext_genome)
+                    except Exception, e:
+                        self.logger.debug("Exception %s, replace with original seed" % e)
+                        self.popul[i] = deepcopy(self.seed_root)
                 else:
                     self.logger.debug("Keep %d:%d variant from trace." % (self.generation+1, i))
 
@@ -197,7 +201,7 @@ class GPPdf:
         self.remaining_traces_id = range(len(traces))
 
         if 0 < len(self.remaining_traces_id) <= self.pop_size:
-            tid_picked = self.remaining_traces_id
+            tid_picked = [stuff for stuff in self.remaining_traces_id]
         elif len(self.remaining_traces_id) > self.pop_size:
             tid_picked = random.sample(self.remaining_traces_id, self.pop_size)
             tid_picked.sort()
@@ -245,11 +249,11 @@ class GPPdf:
             all_scores += scores
             all_gen += [gen for i in range(len(scores))]
             all_vid += [i for i in range(len(scores))]
-        sorted_scores = sorted(range(len(all_scores)), key=lambda j: s[j], reverse=True)
+        sorted_scores = sorted(range(len(all_scores)), key=lambda j: all_scores[j], reverse=True)
         best_k_scores_idx = sorted_scores[:k]
-        best_k_scores = [all_scores[i] for i in best_k_scores_idx]
-        best_k_gen = [all_gen[i] for i in best_k_scores_idx]
-        best_k_vid = [all_vid[i] for i in best_k_scores_idx]
+        best_k_scores = [all_scores[i] for i in best_k_scores_idx if all_scores[i] != LOW_SCORE]
+        best_k_gen = [all_gen[i] for i in best_k_scores_idx if all_scores[i] != LOW_SCORE]
+        best_k_vid = [all_vid[i] for i in best_k_scores_idx if all_scores[i] != LOW_SCORE]
         return best_k_gen, best_k_vid, best_k_scores
 
     def select(self, orig_list, scores, sel_size):
