@@ -1,5 +1,6 @@
 from common import *
 from detector import query_classifier
+import numpy as np
 
 logger = logging.getLogger('gp.fitness')
 
@@ -28,6 +29,61 @@ def fitness_pos_neg(file_paths, seed_sha1, classifier_name, oracle_name, offset 
             score = LOW_SCORE
         fitness_scores.append(score)
     return fitness_scores
+
+def fitness_pos_neg_percent(file_paths, seed_sha1, classifier_name, oracle_name, offset = 0):
+    classifier = lambda *args:query_classifier(classifier_name, *args)
+    oracle = lambda *args:query_classifier(oracle_name, *args)
+
+    classified_scores = classifier(file_paths)
+    oracle_results = oracle(file_paths, seed_sha1)
+
+    while oracle_results == None or classified_scores == None:
+        logger.warning("Invalid results: oracle %s classifier %s " % (oracle_results != None, classified_scores != None))
+        classified_scores = classifier(file_paths)
+        oracle_results = oracle(file_paths, seed_sha1)
+
+    for i in range(len(file_paths)):
+        short_path = '/'.join(file_paths[i].split('/')[-3:])
+        logger.info("Variant: %s %s %s" % (oracle_results[i], classified_scores[i], short_path))
+
+    fitness_scores = []
+    for i in range(len(classified_scores)):
+        if oracle_results[i] == 'malicious':
+            #score = (classified_scores[i][0]-offset) * float(-1) * (1-classified_scores[i][1])
+            score = (classified_scores[i][0]-offset) * float(-1)
+        else:
+            # big negative fitness
+            score = LOW_SCORE
+        fitness_scores.append(score)
+    return fitness_scores
+
+def fitness_pos_neg_cnt(file_paths, seed_sha1, classifier_name, oracle_name, offset = 0.5):
+    classifier = lambda *args:query_classifier(classifier_name, *args)
+    oracle = lambda *args:query_classifier(oracle_name, *args)
+
+    classified_scores = classifier(file_paths)
+    oracle_results = oracle(file_paths, seed_sha1)
+
+    while oracle_results == None or classified_scores == None:
+        logger.warning("Invalid results: oracle %s classifier %s " % (oracle_results != None, classified_scores != None))
+        classified_scores = classifier(file_paths)
+        oracle_results = oracle(file_paths, seed_sha1)
+
+    for i in range(len(file_paths)):
+        short_path = '/'.join(file_paths[i].split('/')[-3:])
+        logger.info("Variant: %s %s %s" % (oracle_results[i], classified_scores[i], short_path))
+
+    fitness_scores = []
+    for i in range(len(classified_scores)):
+        if oracle_results[i] == 'malicious':
+            score = (classified_scores[i][0]-offset) * float(-1) * classified_scores[i][1]
+        else:
+            # big negative fitness
+            score = LOW_SCORE
+        fitness_scores.append(score)
+    return fitness_scores
+
+
 
 def fitness_pre_softmax(file_paths, seed_sha1, classifier_name, oracle_name):
     classifier = lambda *args:query_classifier(classifier_name, *args)
@@ -61,15 +117,74 @@ def fitness_pre_softmax(file_paths, seed_sha1, classifier_name, oracle_name):
         fitness_scores.append(score)
     return fitness_scores
 
+def fitness_log_softmax(file_paths, seed_sha1, classifier_name, oracle_name):
+    classifier = lambda *args:query_classifier(classifier_name, *args)
+    oracle = lambda *args:query_classifier(oracle_name, *args)
+        
+    try:
+        classified_scores = classifier(file_paths)
+        oracle_results = oracle(file_paths, seed_sha1)
+    except Exception:
+        # try again
+        classified_scores = classifier(file_paths)
+        oracle_results = oracle(file_paths, seed_sha1)
+
+    while oracle_results == None or classified_scores == None:
+        logger.warning("Invalid results: oracle %s classifier %s " % (oracle_results != None, classified_scores != None))
+        classified_scores = classifier(file_paths)
+        oracle_results = oracle(file_paths, seed_sha1)
+
+    for i in range(len(file_paths)):
+        short_path = '/'.join(file_paths[i].split('/')[-3:])
+        logger.info("Variant: %s %s %s" % (oracle_results[i], classified_scores[i], short_path))
+
+    fitness_scores = []
+    for i in range(len(classified_scores)):
+        if oracle_results[i] == 'malicious':
+            # distance between log benign and log malicous
+            if classified_scores[i][0] != 0.0:
+                benign = np.log(classified_scores[i][0])
+            else:
+                benign = LOW_SCORE
+            if classified_scores[i][1] != 0.0:
+                malicious = np.log(classified_scores[i][1])
+            else:
+                malicious = LOW_SCORE
+            score = benign - malicious
+            #score = np.log(classified_scores[i][0] + np.exp(-20)) - np.log(classified_scores[i][1] + np.exp(-20))
+        else:
+            # big negative fitness
+            score = LOW_SCORE
+        fitness_scores.append(score)
+    return fitness_scores
+
+
 # score: benign [0, 0.5), malicious (0.5, 1]
 def fitness_01(file_paths, seed_sha1, classifier_name, oracle_name):
     return fitness_pos_neg(file_paths, seed_sha1, classifier_name, oracle_name, offset = 0.5)
 
 def fitness_mlp(file_paths, seed_sha1):
-    return fitness_pre_softmax(file_paths, seed_sha1, 'mlp', 'cuckoo')
+    #return fitness_pre_softmax(file_paths, seed_sha1, 'mlp', 'cuckoo')
+    return fitness_log_softmax(file_paths, seed_sha1, 'mlp', 'cuckoo')
 
 def fitness_robustmlp(file_paths, seed_sha1):
-    return fitness_pre_softmax(file_paths, seed_sha1, 'robustmlp', 'cuckoo')
+    #return fitness_pre_softmax(file_paths, seed_sha1, 'robustmlp', 'cuckoo')
+    return fitness_log_softmax(file_paths, seed_sha1, 'robustmlp', 'cuckoo')
+
+def fitness_threeprop(file_paths, seed_sha1):
+    return fitness_log_softmax(file_paths, seed_sha1, 'threeprop', 'cuckoo')
+
+def fitness_baseline_adv(file_paths, seed_sha1):
+    return fitness_log_softmax(file_paths, seed_sha1, 'baseline_adv', 'cuckoo')
+
+def fitness_monotonic(file_paths, seed_sha1):
+    return fitness_pos_neg(file_paths, seed_sha1, 'monotonic', 'cuckoo', offset = 0.5)
+
+def fitness_ensemble(file_paths, seed_sha1):
+    return fitness_pos_neg(file_paths, seed_sha1, 'ensemble', 'cuckoo', offset = 0.5)
+
+def fitness_ensemblecnt(file_paths, seed_sha1):
+    return fitness_pos_neg_cnt(file_paths, seed_sha1, 'ensemblecnt', 'cuckoo', offset = 0.5)
 
 def fitness_pdfrate(file_paths, seed_sha1):
     return fitness_01(file_paths, seed_sha1, 'pdfrate', 'cuckoo')
