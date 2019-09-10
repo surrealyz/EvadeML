@@ -26,12 +26,15 @@ def query_tf(X):
     if r.status_code == 200:
         json_decoder = json.JSONDecoder()
         res = json_decoder.decode(r.text)
-        return [item['pre_softmax'] for item in res['predictions']]
+        return [item['y_softmax'] for item in res['predictions']]
 
 
 if __name__ == "__main__":
     REST_URL='http://localhost:8501/v1/models/baseline:predict'
-
+    print sys.argv[1]
+    print mlp([sys.argv[1]])
+    
+    """
     test_instance = [list(np.zeros(3514)), list(np.ones(3514))]
     payload = {'instances': test_instance}
     r = requests.post(REST_URL, json=payload)
@@ -39,6 +42,10 @@ if __name__ == "__main__":
     res = json_decoder.decode(r.text)
     #print res['predictions']
     classified_scores = [item['pre_softmax'] for item in res['predictions']]
-    print classified_scores
-    for i in range(len(classified_scores)):
-        print classified_scores[i][0] - classified_scores[i][1]
+    scores = [item['y_softmax'] for item in res['predictions']]
+    print 'pre_softmax', classified_scores
+    print 'y_softmax', scores
+    #for i in range(len(classified_scores)):
+    #    print 'logit_diff', classified_scores[i][0] - classified_scores[i][1]
+    #    print 'log_softmax_diff', np.log(scores[i][0] + pow(10, -10)) - np.log(scores[i][1] + pow(10, -10))
+    """
