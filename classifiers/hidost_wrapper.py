@@ -93,7 +93,7 @@ def hidost_feature(pdf_paths, tmp_dir=None, nfeat=10924, fpath=feats_path, basen
         else:
             pdf_file_name = hash_str(pdf_path) + ".pdf"
 
-        cmd = "%s \"%s\" n > %s" % (pdf2paths_cmd, pdf_path, os.path.join(tmp_dir, pdf_file_name))
+        cmd = "%s \"%s\" y > %s" % (pdf2paths_cmd, pdf_path, os.path.join(tmp_dir, pdf_file_name))
         #print cmd ### DEBUG
         os.system(cmd)
         # only add files that are not empty
@@ -106,7 +106,7 @@ def hidost_feature(pdf_paths, tmp_dir=None, nfeat=10924, fpath=feats_path, basen
     cmd = "%s -m %s -b %s -f %s -o %s" % (feat_extract_cmd, pdf_file_list, empty_file_list, fpath, data_file)
     print(cmd)
     os.system(cmd)
-    os.system("cat %s" % data_file)
+    #os.system("cat %s" % data_file)
 
     # Critical: the file order in input.pdfs.list may not be preserved in input.data.libsvm due to libquickly.
     correct_feats_order(data_file, pdf_file_list, data_file_corrected_order)
