@@ -49,19 +49,23 @@ class Trace:
     def execute_mut_trace(root, trace, ext_genome):
         for operation in trace:
             op, op_obj_path, ext_id = operation
-            ext_root, tgt_obj_path = ext_genome[ext_id]
 
             try:
                 if op == 'delete':
                     PdfGenome.delete(root, op_obj_path)
                 elif op == 'insert':
+                    ext_root, tgt_obj_path = ext_genome[ext_id]
                     PdfGenome.insert(root, op_obj_path, ext_root, tgt_obj_path)
                 elif op == 'swap':
+                    ext_root, tgt_obj_path = ext_genome[ext_id]
                     PdfGenome.swap(root, op_obj_path, ext_root, tgt_obj_path)
+                elif op == 'move':
+                    PdfGenome.move_exploit(root, op_obj_path, ext_id)
                 else:
                     logger.error("undefined operator: ", op)
-            except:
+            except Exception, e:
                 logger.error("operation failed: %s" % str(operation))
+                logger.error("exception: %s" % e)
         return root
 
 def _generate_variant_from_trace(ntuple):
