@@ -34,6 +34,10 @@ from classifiers.pdfrate_wrapper import pdfrate
 from classifiers.hidost_wrapper import hidost
 from classifiers.mlp_wrapper import mlp
 from classifiers.robustmlp_wrapper import robustmlp
+from classifiers.threeprop_wrapper import threeprop
+from classifiers.baseline_adv_wrapper import baseline_adv
+from classifiers.monotonic_wrapper import monotonic
+from classifiers.ensemble_wrapper import ensemble
 from classifiers.bundle_wrapper import hidost_pdfrate, hidost_pdfrate_sigmoid
 
 import sklearn
@@ -81,7 +85,7 @@ def query(file_paths, real_query_method=None, query_method=None, insert_method=N
     logger.info("Waiting for %d results." % len(to_wpw_files))
     query_results = real_query_method(to_wpw_files)
     logger.info("Finished.")
-
+    
     for i in range(len(hashes)):
         hash_str = hashes[i]
         result = query_results[i]
@@ -107,6 +111,14 @@ def query_classifier(classifier_name, file_paths, seed_sha1 = None):
         real_query_method = mlp
     elif classifier_name == "robustmlp":
         real_query_method = robustmlp
+    elif classifier_name == "threeprop":
+        real_query_method = threeprop
+    elif classifier_name == "baseline_adv":
+        real_query_method = baseline_adv
+    elif classifier_name == "monotonic":
+        real_query_method = monotonic
+    elif classifier_name == "ensemble":
+        real_query_method = ensemble
     elif classifier_name == "wepawet":
         real_query_method = wepawet
     elif classifier_name == "cuckoo":
@@ -123,6 +135,10 @@ def query_classifier(classifier_name, file_paths, seed_sha1 = None):
 
     results = query(file_paths, real_query_method=real_query_method, \
                      query_method=query_method, insert_method=insert_method, expected_sig=expected_sig)
+    ### DEBUG
+    #logger.info('classifier_name: %s' % classifier_name) 
+    #results = query(file_paths, real_query_method=real_query_method, \
+    #                expected_sig=expected_sig)
     assert(len(file_paths) == len(results))
 
     if classifier_name == "cuckoo":
